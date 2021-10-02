@@ -1,7 +1,7 @@
 CC=g++ -g -Wall -std=c++17
 
 # List of source files for your thread library
-THREAD_SOURCES=file1.cpp file2.cpp
+THREAD_SOURCES=cpu.cpp
 
 # Generate the names of the thread library's object files
 THREAD_OBJS=${THREAD_SOURCES:.cpp=.o}
