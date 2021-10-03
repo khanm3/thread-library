@@ -8,5 +8,6 @@ void hello(void *a)
 
 int main()
 {
-    cpu::boot(1, (thread_startfunc_t) hello, (void *) 0, false, false, 0);
+    cpu::boot(1, (thread_startfunc_t) hello, (void *) 100, false, false, 0);
+    std::cout << "finishing boot" << std::endl;
 }
