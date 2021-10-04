@@ -4,6 +4,13 @@
 #include "types.h"
 
 void cpu::init(thread_startfunc_t body, void *arg) {
+    // TODO: MULTIPROCESSOR: consider when body == nullptr
+
+    // switch invariant - disable interrupts
+    interrupt_disable();
+
+    // TODO: MULTIPROCESSOR - switch invariant - acquire guard
+
     // create temp tcb object and initialize it
     Tcb threadToRun;
     char *stack = new char[STACK_SIZE];

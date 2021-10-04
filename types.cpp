@@ -9,6 +9,8 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
     // enable interrupts - switch invariant
     cpu::interrupt_enable();
 
+    // TODO: MULTIPROCESSOR - switch invariant - acquire guard
+
     // run thread to finish
     body(arg);
 
