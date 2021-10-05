@@ -7,7 +7,7 @@ void cpu::init(thread_startfunc_t body, void *arg) {
     // TODO: MULTIPROCESSOR: consider when body == nullptr
 
     // switch invariant - disable interrupts
-    interrupt_disable();
+    // interrupt_disable();
 
     // TODO: MULTIPROCESSOR - switch invariant - acquire guard
 
