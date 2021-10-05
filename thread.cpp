@@ -11,12 +11,6 @@ thread::thread(thread_startfunc_t body, void *args) {
 	// Initialize TCB
 	// I feel like this could be modularized
 	Tcb readyThread;
-	char *stack = new char[STACK_SIZE];
-    readyThread.ctx = std::unique_ptr<ucontext_t>(new ucontext_t());
-    readyThread.ctx->uc_stack.ss_sp = stack;
-    readyThread.ctx->uc_stack.ss_size = STACK_SIZE;
-    readyThread.ctx->uc_stack.ss_flags = 0;
-    readyThread.ctx->uc_link = nullptr;
 
     // Add stack pointer and args to contact
     makecontext(readyThread.ctx.get(), (void (*)()) os_wrapper, 2, body, args);
