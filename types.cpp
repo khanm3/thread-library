@@ -1,8 +1,31 @@
+#include <cassert>
 #include "types.h"
 
 std::queue<Tcb> readyQueue;
 std::vector<Tcb> finishedList;
 std::map<cpu *, Tcb> runningList;
+
+Tcb::Tcb()
+    : ctx(std::unique_ptr<ucontext_t>(nullptr))
+    , state(INITIALIZED)
+{
+}
+
+Tcb::Tcb(ThreadState state, thread_startfunc_t body, void *arg)
+    : ctx(std::unique_ptr<ucontext_t>(new ucontext_t()))
+    , state(state)
+{
+    ctx->uc_stack.ss_sp = new char[STACK_SIZE];
+    ctx->uc_stack.ss_size = STACK_SIZE;
+    ctx->uc_stack.ss_flags = 0;
+    ctx->uc_link = nullptr;
+    makecontext(ctx.get(), (void (*)()) os_wrapper, 2, body, arg);
+}
+
+void Tcb::freeStack() {
+        assert(ctx);
+        delete[] (char *) ctx->uc_stack.ss_sp;
+}
 
 void os_wrapper(thread_startfunc_t body, void *arg) {
     assert_interrupts_disabled();

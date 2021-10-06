@@ -1,7 +1,6 @@
 #ifndef _TYPES_H
 #define _TYPES_H
 
-#include <cassert>
 #include <map>
 #include <memory>
 #include <queue>
@@ -18,24 +17,14 @@ enum ThreadState {
 
 class Tcb {
 public:
-    // EFFECTS: creates a TCB with a ucontext_t and stack already allocated
-    // and its state set to INITIALIZED
-    Tcb() :
-        ctx(std::unique_ptr<ucontext_t>(new ucontext_t())),
-        state(INITIALIZED)
-    {
-        ctx->uc_stack.ss_sp = new char[STACK_SIZE];
-        ctx->uc_stack.ss_size = STACK_SIZE;
-        ctx->uc_stack.ss_flags = 0;
-        ctx->uc_link = nullptr;
-    }
+    // EFFECTS: creates an empty TCB. it contains no context or stack, and
+    // its initial state is INITIALIZED.
+    Tcb();
 
-    // REQUIRES: ctx manages a ucontext_t object
-    // EFFECTS: deallocates stack
-    void freeStack() {
-        assert(ctx);
-        delete[] (char *) ctx->uc_stack.ss_sp;
-    }
+    // EFFECTS: creates a valid TCB with an allocated context and stack
+    // whose state is initialized to the given state, and whose program
+    // counter is set to the given function with the given argument
+    Tcb(ThreadState, thread_startfunc_t, void *);
 
     // use default move constructors
     Tcb(Tcb&&) = default;
@@ -45,6 +34,11 @@ public:
     Tcb(const Tcb&) = delete;
     Tcb& operator=(const Tcb&) = delete;
 
+    // REQUIRES: this tcb manages a stack (as well as a context, implicitly)
+    // EFFECTS: frees the stack managed by this tcb
+    void freeStack();
+
+    // MEMBER VARIABLES //
     std::unique_ptr<ucontext_t> ctx;
     ThreadState state;
 };
