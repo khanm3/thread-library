@@ -23,8 +23,8 @@ Tcb::Tcb(ThreadState state, thread_startfunc_t body, void *arg)
 }
 
 void Tcb::freeStack() {
-        assert(ctx);
-        delete[] (char *) ctx->uc_stack.ss_sp;
+    assert(ctx);
+    delete[] (char *) ctx->uc_stack.ss_sp;
 }
 
 void os_wrapper(thread_startfunc_t body, void *arg) {
