@@ -1,22 +1,18 @@
 #include <ucontext.h>
-#include "cpu.h"
+#include "thread.h"
 #include "types.h"
 
-// extern std::queue<Tcb> readyQueue;
-
 thread::thread(thread_startfunc_t body, void *args) {
-	// TODO: MULTIPROCESSOR - switch invariant - acquire guard
 	cpu::interrupt_disable();
+    // TODO: MULTIPROCESSOR - switch invariant - acquire guard
 
-	// Initialize TCB
-	// I feel like this could be modularized
+	// create temp tcb
+    // then change state to READY and initialize context
 	Tcb readyThread;
-
-    // Add stack pointer and args to contact
+    readyThread.state = READY;
     makecontext(readyThread.ctx.get(), (void (*)()) os_wrapper, 2, body, args);
 
-    // Put TCB on readyqueue
-    // readyThread.state = READY;
+    // place tcb on ready queue
     readyQueue.push(std::move(readyThread));
 
     // TODO: MULTIPROCESSOR - IPI to available CPU
@@ -24,6 +20,4 @@ thread::thread(thread_startfunc_t body, void *args) {
     cpu::interrupt_enable();
 }
 
-thread::~thread() {
-	printf("Thread has died\n");
-}
+thread::~thread() = default;
