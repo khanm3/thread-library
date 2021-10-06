@@ -37,4 +37,4 @@ app: app.cpp libthread.o libcpu.o
 	${CC} -c $<
 
 clean:
-	rm -f ${THREAD_OBJS} libthread.o app
+	rm -f ${THREAD_OBJS} libthread.o app ${TESTS}
