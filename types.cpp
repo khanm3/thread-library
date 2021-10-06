@@ -10,7 +10,7 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
 
     // If there are any finished threads to clean up, clean them up
     while(!finishedList.empty()) {
-        delete[] (char*) finishedList.back().ctx->uc_stack.ss_sp;
+        finishedList.back().freeStack();
         finishedList.pop_back();
     }
 
