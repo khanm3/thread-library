@@ -27,11 +27,13 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
 
     // move tcb of currently running thread to finished list
     Tcb &currThread = runningList[cpu::self()];
+    currThread.state = FINISHED;
     finishedList.push_back(std::move(currThread));
 
     // if another thread on ready queue, switch to it
     if (!readyQueue.empty()) {
-        // move top tcb on ready queue onto running list
+        // move top tcb from ready queue onto running list
+        readyQueue.front().state = RUNNING;
         currThread = std::move(readyQueue.front());
         readyQueue.pop();
 
