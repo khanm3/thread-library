@@ -64,4 +64,8 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
         // concern: currThread might go out of context and then we would leak its stack
         setcontext(currThread.ctx.get());
     }
+    // else no threads to run, put cpu to sleep
+    else {
+        cpu::interrupt_enable_suspend();
+    }
 }
