@@ -15,3 +15,26 @@ thread::thread(thread_startfunc_t body, void *arg) {
 }
 
 thread::~thread() = default;
+
+void thread::yield() {
+    cpu::interrupt_disable();
+    // TODO: MULTIPROCESSOR - acquire guard
+
+    if (!readyQueue.empty()) {
+        // put current thread on ready queue
+        Tcb &currThread = runningList[cpu::self()];
+        currThread.state = READY;
+        readyQueue.push(std::move(currThread));
+
+        // put next thread in ready queue onto running list
+        readyQueue.front().state = RUNNING;
+        currThread = std::move(readyQueue.front());
+        readyQueue.pop();
+
+        // switch to next thread
+        swapcontext(readyQueue.back().ctx.get(), currThread.ctx.get());
+    }
+
+    // TODO: MULTIPROCESSOR - free guard
+    cpu::interrupt_enable();
+}
