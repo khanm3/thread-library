@@ -33,9 +33,9 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
     // if another thread on ready queue, switch to it
     if (!readyQueue.empty()) {
         // move top tcb from ready queue onto running list
-        readyQueue.front().state = RUNNING;
         currThread = std::move(readyQueue.front());
         readyQueue.pop();
+        currThread.state = RUNNING;
 
         // switch context to new current thread
         // concern: currThread might go out of context and then we would leak its stack

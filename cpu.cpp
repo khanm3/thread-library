@@ -8,15 +8,13 @@ void cpu::init(thread_startfunc_t body, void *arg) {
 
     // switch invariant - disable interrupts
     assert_interrupts_disabled();
-
     // TODO: MULTIPROCESSOR - switch invariant - acquire guard
 
-    // create tcb object on running list
-    // then change state to RUNNING and initialize context
+    // create tcb object on running list, and initialize its state and context
     Tcb &threadToRun = runningList[cpu::self()];
     threadToRun.state = RUNNING;
     makecontext(threadToRun.ctx.get(), (void (*)()) os_wrapper, 2, body, arg);
 
-    // switch context
+    // begin executing thread
     setcontext(threadToRun.ctx.get());
 }
