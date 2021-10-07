@@ -9,6 +9,7 @@ Tcb::Tcb()
     : ctx(std::unique_ptr<ucontext_t>(nullptr))
     , state(INITIALIZED)
 {
+
 }
 
 Tcb::Tcb(ThreadState state, thread_startfunc_t body, void *arg)
@@ -49,6 +50,7 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
     cpu::interrupt_disable();
 
     // move tcb of currently running thread to finished list
+    assert(runningList.find(cpu::self()) != runningList.end());
     Tcb &currThread = runningList[cpu::self()];
     currThread.state = FINISHED;
     finishedList.push_back(std::move(currThread));

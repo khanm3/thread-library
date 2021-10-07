@@ -22,6 +22,7 @@ void thread::yield() {
 
     if (!readyQueue.empty()) {
         // put current thread on ready queue
+        assert(runningList.find(cpu::self()) != runningList.end());
         Tcb &currThread = runningList[cpu::self()];
         currThread.state = READY;
         readyQueue.push(std::move(currThread));
