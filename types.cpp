@@ -7,14 +7,16 @@ std::map<cpu *, TcbPtr> runningList;
 
 Tcb::Tcb()
     : ctx(ucontext_t())
-    , state(INITIALIZED)
+    , state(ThreadStatePtr(new ThreadState(INITIALIZED)))
+    , joinQueue(JoinQueuePtr(NULL))
 {
 
 }
 
 Tcb::Tcb(ThreadState state, thread_startfunc_t body, void *arg)
     : ctx(ucontext_t())
-    , state(state)
+    , state(ThreadStatePtr(new ThreadState(state)))
+    , joinQueue(JoinQueuePtr(new std::queue<TcbPtr>()))
 {
     ctx.uc_stack.ss_sp = new char[STACK_SIZE];
     ctx.uc_stack.ss_size = STACK_SIZE;
@@ -52,7 +54,7 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
     // move tcb of currently running thread to finished list
     assert(runningList.find(cpu::self()) != runningList.end());
     TcbPtr &currThread = runningList[cpu::self()];
-    currThread->state = FINISHED;
+    *(currThread->state) = FINISHED;
     finishedList.push_back(std::move(currThread));
 
     // if another thread on ready queue, switch to it
@@ -60,7 +62,7 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
         // move top tcb from ready queue onto running list
         currThread = std::move(readyQueue.front());
         readyQueue.pop();
-        currThread->state = RUNNING;
+        *(currThread->state) = RUNNING;
 
         // switch context to new current thread
         // concern: currThread might go out of context and then we would leak its stack

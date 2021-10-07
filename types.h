@@ -40,10 +40,13 @@ public:
 
     // MEMBER VARIABLES //
     ucontext_t ctx;
-    ThreadState state;
+    std::shared_ptr<ThreadState> state;
+    std::shared_ptr<std::queue<std::unique_ptr<Tcb>>> joinQueue; 
 };
 
 using TcbPtr = std::unique_ptr<Tcb>;
+using ThreadStatePtr = std::shared_ptr<ThreadState>;
+using JoinQueuePtr = std::shared_ptr<std::queue<TcbPtr>>;
 
 extern std::queue<TcbPtr> readyQueue;
 extern std::vector<TcbPtr> finishedQueue;
