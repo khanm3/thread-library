@@ -1,31 +1,31 @@
 #include <cassert>
 #include "types.h"
 
-std::queue<Tcb> readyQueue;
-std::vector<Tcb> finishedList;
-std::map<cpu *, Tcb> runningList;
+std::queue<TcbPtr> readyQueue;
+std::vector<TcbPtr> finishedList;
+std::map<cpu *, TcbPtr> runningList;
 
 Tcb::Tcb()
-    : ctx(std::unique_ptr<ucontext_t>(nullptr))
+    : ctx(ucontext_t())
     , state(INITIALIZED)
 {
 
 }
 
 Tcb::Tcb(ThreadState state, thread_startfunc_t body, void *arg)
-    : ctx(std::unique_ptr<ucontext_t>(new ucontext_t()))
+    : ctx(ucontext_t())
     , state(state)
 {
-    ctx->uc_stack.ss_sp = new char[STACK_SIZE];
-    ctx->uc_stack.ss_size = STACK_SIZE;
-    ctx->uc_stack.ss_flags = 0;
-    ctx->uc_link = nullptr;
-    makecontext(ctx.get(), (void (*)()) os_wrapper, 2, body, arg);
+    ctx.uc_stack.ss_sp = new char[STACK_SIZE];
+    ctx.uc_stack.ss_size = STACK_SIZE;
+    ctx.uc_stack.ss_flags = 0;
+    ctx.uc_link = nullptr;
+    makecontext(&ctx, (void (*)()) os_wrapper, 2, body, arg);
 }
 
 void Tcb::freeStack() {
-    assert(ctx);
-    delete[] (char *) ctx->uc_stack.ss_sp;
+    assert(ctx.uc_stack.ss_sp != nullptr);
+    delete[] (char *) ctx.uc_stack.ss_sp;
 }
 
 void os_wrapper(thread_startfunc_t body, void *arg) {
@@ -34,7 +34,7 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
 
     // If there are any finished threads to clean up, clean them up
     while(!finishedList.empty()) {
-        finishedList.back().freeStack();
+        finishedList.back()->freeStack();
         finishedList.pop_back();
     }
 
@@ -51,8 +51,8 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
 
     // move tcb of currently running thread to finished list
     assert(runningList.find(cpu::self()) != runningList.end());
-    Tcb &currThread = runningList[cpu::self()];
-    currThread.state = FINISHED;
+    TcbPtr &currThread = runningList[cpu::self()];
+    currThread->state = FINISHED;
     finishedList.push_back(std::move(currThread));
 
     // if another thread on ready queue, switch to it
@@ -60,11 +60,11 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
         // move top tcb from ready queue onto running list
         currThread = std::move(readyQueue.front());
         readyQueue.pop();
-        currThread.state = RUNNING;
+        currThread->state = RUNNING;
 
         // switch context to new current thread
         // concern: currThread might go out of context and then we would leak its stack
-        setcontext(currThread.ctx.get());
+        setcontext(&currThread->ctx);
     }
     // else no threads to run, put cpu to sleep
     else {

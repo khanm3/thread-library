@@ -39,13 +39,15 @@ public:
     void freeStack();
 
     // MEMBER VARIABLES //
-    std::unique_ptr<ucontext_t> ctx;
+    ucontext_t ctx;
     ThreadState state;
 };
 
-extern std::queue<Tcb> readyQueue;
-extern std::vector<Tcb> finishedQueue;
-extern std::map<cpu *, Tcb> runningList;
+using TcbPtr = std::unique_ptr<Tcb>;
+
+extern std::queue<TcbPtr> readyQueue;
+extern std::vector<TcbPtr> finishedQueue;
+extern std::map<cpu *, TcbPtr> runningList;
 
 void os_wrapper(thread_startfunc_t, void *);
 

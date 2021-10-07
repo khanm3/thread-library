@@ -11,9 +11,9 @@ void cpu::init(thread_startfunc_t body, void *arg) {
     // TODO: MULTIPROCESSOR - switch invariant - acquire guard
 
     // create tcb object and put it on the running list
-    Tcb &threadToRun = runningList[cpu::self()];
-    threadToRun = Tcb(RUNNING, body, arg);
+    TcbPtr &threadToRun = runningList[cpu::self()];
+    threadToRun = TcbPtr(new Tcb(RUNNING, body, arg));
 
     // begin executing thread
-    setcontext(threadToRun.ctx.get());
+    setcontext(&threadToRun->ctx);
 }
