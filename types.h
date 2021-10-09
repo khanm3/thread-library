@@ -49,7 +49,7 @@ using ThreadStatePtr = std::shared_ptr<ThreadState>;
 using JoinQueuePtr = std::shared_ptr<std::queue<TcbPtr>>;
 
 extern std::queue<TcbPtr> readyQueue;
-extern std::vector<TcbPtr> finishedQueue;
+extern std::vector<TcbPtr> finishedList;
 extern std::map<cpu *, TcbPtr> runningList;
 
 void os_wrapper(thread_startfunc_t, void *);
