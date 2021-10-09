@@ -8,7 +8,7 @@ std::map<cpu *, TcbPtr> runningList;
 Tcb::Tcb()
     : ctx(ucontext_t())
     , state(ThreadStatePtr(new ThreadState(INITIALIZED)))
-    , joinQueue(JoinQueuePtr(NULL))
+    , joinQueue(JoinQueuePtr(nullptr))
 {
 
 }
@@ -28,6 +28,7 @@ Tcb::Tcb(ThreadState state, thread_startfunc_t body, void *arg)
 void Tcb::freeStack() {
     assert(ctx.uc_stack.ss_sp != nullptr);
     delete[] (char *) ctx.uc_stack.ss_sp;
+    ctx.uc_stack.ss_sp = nullptr;
 }
 
 void os_wrapper(thread_startfunc_t body, void *arg) {
@@ -51,9 +52,18 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
     // disable interrupts - switch invariant
     cpu::interrupt_disable();
 
-    // move tcb of currently running thread to finished list
+    // get tcb of currently running thread
     assert(runningList.find(cpu::self()) != runningList.end());
     TcbPtr &currThread = runningList[cpu::self()];
+
+    // move all tcbs on join queue onto ready queue
+    while (!currThread->joinQueue->empty()) {
+        *(currThread->joinQueue->front()->state) = READY;
+        readyQueue.push(std::move(currThread->joinQueue->front()));
+        currThread->joinQueue->pop();
+    }
+
+    // move tcb of currently running thread to finished list
     *(currThread->state) = FINISHED;
     finishedList.push_back(std::move(currThread));
 

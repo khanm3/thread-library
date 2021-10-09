@@ -18,19 +18,17 @@ thread::thread(thread_startfunc_t body, void *arg) {
     impl_ptr = new impl();
 
     // create tcb and put it onto ready queue
-    printf("Hello 1\n");
     readyQueue.push(TcbPtr(new Tcb(READY, body, arg)));
-    printf("Hello 2\n");
     impl_ptr->state = readyQueue.back()->state;
-    printf("Hello 3\n");
     impl_ptr->joinQueue = readyQueue.back()->joinQueue;
-    printf("Hello 4\n");
     // TODO: MULTIPROCESSOR - IPI to available CPU
     // TODO: MULTIPROCESSOR - free guard
     cpu::interrupt_enable();
 }
 
-thread::~thread() = default;
+thread::~thread() {
+    delete impl_ptr;
+}
 
 void thread::yield() {
     cpu::interrupt_disable();
@@ -50,6 +48,59 @@ void thread::yield() {
 
         // switch to next thread
         swapcontext(&readyQueue.back()->ctx, &currThread->ctx);
+    }
+
+    // TODO: MULTIPROCESSOR - free guard
+    cpu::interrupt_enable();
+}
+
+void thread::join() {
+    cpu::interrupt_disable();
+    // TODO: MULTIPROCESSOR - acquire guard
+
+    // TODO: check currThread TCB is valid (state, joinQueue, stack)
+    assert(runningList.find(cpu::self()) != runningList.end());
+    TcbPtr &currThread = runningList[cpu::self()];
+
+    ThreadStatePtr state = impl_ptr->state.lock();
+    // case 1: thread is still running, block current thread
+    if (state && *state != FINISHED) {
+        JoinQueuePtr joinQueue = impl_ptr->joinQueue.lock();
+        assert(joinQueue);
+
+        // move current thread to join queue
+        *(currThread->state) = BLOCKED;
+        joinQueue->push(std::move(currThread));
+
+        // TODO: abstract this part out?
+        // TODO: make order of state update consistent (before moving TCB)
+        // if another thread on ready queue, switch to it
+        if (!readyQueue.empty()) {
+            // move top tcb from ready queue onto running list
+            currThread = std::move(readyQueue.front());
+            readyQueue.pop();
+            *(currThread->state) = RUNNING;
+
+            // switch context to new current thread
+            swapcontext(&joinQueue->back()->ctx, &currThread->ctx);
+        }
+        // else no other threads, update TCB on join Queue then suspend
+        else {
+            // TODO: multiprocessor - update TCB
+            // getcontext(&joinQueue->back()->ctx);
+            // increment PC counter to be directly after suspend
+            cpu::interrupt_enable_suspend();
+        }
+
+        // TODO: insert a "switching into new thread" invariant function
+        // check state (thread finished) invariant
+        assert(!state || *state == FINISHED);
+
+
+    }
+    // case 2 thread has finished, continue execution
+    else {
+        // do nothing
     }
 
     // TODO: MULTIPROCESSOR - free guard
