@@ -58,4 +58,6 @@ void os_wrapper(thread_startfunc_t, void *);
 
 void switch_to_next_or_suspend(ucontext_t *);
 
+void cleanup_finished_list();
+
 #endif

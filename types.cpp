@@ -38,11 +38,8 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
     assert_interrupts_disabled();
     // do os stuff
 
-    // If there are any finished threads to clean up, clean them up
-    while(!finishedList.empty()) {
-        finishedList.back()->freeStack();
-        finishedList.pop_back();
-    }
+    // if there are any threads on the finished list, clean them up
+    cleanup_finished_list();
 
     // enable interrupts - switch invariant
     cpu::interrupt_enable();
@@ -100,4 +97,13 @@ void switch_to_next_or_suspend(ucontext_t *saveloc) {
     }
 
     assert_interrupts_disabled();
+}
+
+void cleanup_finished_list() {
+    assert_interrupts_disabled();
+
+    while(!finishedList.empty()) {
+        finishedList.back()->freeStack();
+        finishedList.pop_back();
+    }
 }

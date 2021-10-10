@@ -44,6 +44,9 @@ void thread::yield() {
 
         // switch to next ready thread
         switch_to_next_or_suspend(&readyQueue.back()->ctx);
+
+        // if there are any threads on the finished list, clean them up
+        cleanup_finished_list();
     }
 
     // TODO: MULTIPROCESSOR - free guard
@@ -70,6 +73,9 @@ void thread::join() {
 
         // switch to next ready thread if there is one, else suspend
         switch_to_next_or_suspend(&joinQueue->back()->ctx);
+
+        // if there are any threads on the finished list, clean them up
+        cleanup_finished_list();
     }
     // case 2 thread has finished, continue execution
     else {
