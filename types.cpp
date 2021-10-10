@@ -7,6 +7,7 @@ std::map<cpu *, TcbPtr> runningList;
 
 Tcb::Tcb()
     : ctx(ucontext_t())
+    , stackPtr(nullptr)
     , state(ThreadStatePtr(new ThreadState(INITIALIZED)))
     , joinQueue(JoinQueuePtr(nullptr))
 {
@@ -15,10 +16,11 @@ Tcb::Tcb()
 
 Tcb::Tcb(ThreadState state, thread_startfunc_t body, void *arg)
     : ctx(ucontext_t())
+    , stackPtr(new char[STACK_SIZE])
     , state(ThreadStatePtr(new ThreadState(state)))
     , joinQueue(JoinQueuePtr(new std::queue<TcbPtr>()))
 {
-    ctx.uc_stack.ss_sp = new char[STACK_SIZE];
+    ctx.uc_stack.ss_sp = stackPtr;
     ctx.uc_stack.ss_size = STACK_SIZE;
     ctx.uc_stack.ss_flags = 0;
     ctx.uc_link = nullptr;
@@ -26,9 +28,9 @@ Tcb::Tcb(ThreadState state, thread_startfunc_t body, void *arg)
 }
 
 void Tcb::freeStack() {
-    assert(ctx.uc_stack.ss_sp != nullptr);
-    delete[] (char *) ctx.uc_stack.ss_sp;
-    ctx.uc_stack.ss_sp = nullptr;
+    assert(stackPtr != nullptr);
+    delete[] (char *) stackPtr;
+    stackPtr = nullptr;
 }
 
 void os_wrapper(thread_startfunc_t body, void *arg) {

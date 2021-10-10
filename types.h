@@ -40,8 +40,9 @@ public:
 
     // MEMBER VARIABLES //
     ucontext_t ctx;
+    char *stackPtr;
     std::shared_ptr<ThreadState> state;
-    std::shared_ptr<std::queue<std::unique_ptr<Tcb>>> joinQueue; 
+    std::shared_ptr<std::queue<std::unique_ptr<Tcb>>> joinQueue;
 };
 
 using TcbPtr = std::unique_ptr<Tcb>;
