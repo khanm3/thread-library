@@ -52,7 +52,10 @@ using JoinQueuePtr = std::shared_ptr<std::queue<TcbPtr>>;
 extern std::queue<TcbPtr> readyQueue;
 extern std::vector<TcbPtr> finishedList;
 extern std::map<cpu *, TcbPtr> runningList;
+extern ucontext_t *dummyCtx;
 
 void os_wrapper(thread_startfunc_t, void *);
+
+void switch_to_next_or_suspend(ucontext_t *);
 
 #endif

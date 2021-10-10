@@ -34,6 +34,7 @@ void thread::yield() {
     cpu::interrupt_disable();
     // TODO: MULTIPROCESSOR - acquire guard
 
+    // there is a next ready thread
     if (!readyQueue.empty()) {
         // put current thread on ready queue
         assert(runningList.find(cpu::self()) != runningList.end());
@@ -41,13 +42,8 @@ void thread::yield() {
         *(currThread->state) = READY;
         readyQueue.push(std::move(currThread));
 
-        // put next thread in ready queue onto running list
-        *(readyQueue.front()->state) = RUNNING;
-        currThread = std::move(readyQueue.front());
-        readyQueue.pop();
-
-        // switch to next thread
-        swapcontext(&readyQueue.back()->ctx, &currThread->ctx);
+        // switch to next ready thread
+        switch_to_next_or_suspend(&readyQueue.back()->ctx);
     }
 
     // TODO: MULTIPROCESSOR - free guard
@@ -72,31 +68,8 @@ void thread::join() {
         *(currThread->state) = BLOCKED;
         joinQueue->push(std::move(currThread));
 
-        // TODO: abstract this part out?
-        // TODO: make order of state update consistent (before moving TCB)
-        // if another thread on ready queue, switch to it
-        if (!readyQueue.empty()) {
-            // move top tcb from ready queue onto running list
-            currThread = std::move(readyQueue.front());
-            readyQueue.pop();
-            *(currThread->state) = RUNNING;
-
-            // switch context to new current thread
-            swapcontext(&joinQueue->back()->ctx, &currThread->ctx);
-        }
-        // else no other threads, update TCB on join Queue then suspend
-        else {
-            // TODO: multiprocessor - update TCB
-            // getcontext(&joinQueue->back()->ctx);
-            // increment PC counter to be directly after suspend
-            cpu::interrupt_enable_suspend();
-        }
-
-        // TODO: insert a "switching into new thread" invariant function
-        // check state (thread finished) invariant
-        assert(!state || *state == FINISHED);
-
-
+        // switch to next ready thread if there is one, else suspend
+        switch_to_next_or_suspend(&joinQueue->back()->ctx);
     }
     // case 2 thread has finished, continue execution
     else {

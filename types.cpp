@@ -4,6 +4,7 @@
 std::queue<TcbPtr> readyQueue;
 std::vector<TcbPtr> finishedList;
 std::map<cpu *, TcbPtr> runningList;
+ucontext_t *dummyCtx = new ucontext_t;
 
 Tcb::Tcb()
     : ctx(ucontext_t())
@@ -69,6 +70,17 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
     *(currThread->state) = FINISHED;
     finishedList.push_back(std::move(currThread));
 
+    // switch to next ready thread if there is one, else suspend
+    switch_to_next_or_suspend(dummyCtx);
+}
+
+void switch_to_next_or_suspend(ucontext_t *saveloc) {
+    assert_interrupts_disabled();
+
+    assert(runningList.find(cpu::self()) != runningList.end());
+    TcbPtr &currThread = runningList[cpu::self()];
+    // TODO: assert currThread points to an "empty" Tcb
+
     // if another thread on ready queue, switch to it
     if (!readyQueue.empty()) {
         // move top tcb from ready queue onto running list
@@ -77,11 +89,15 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
         *(currThread->state) = RUNNING;
 
         // switch context to new current thread
-        // concern: currThread might go out of context and then we would leak its stack
-        setcontext(&currThread->ctx);
+        swapcontext(saveloc, &currThread->ctx);
     }
-    // else no threads to run, put cpu to sleep
+    // else no other threads, save tcb to saveloc then suspend
     else {
+        // TODO: multiprocessor - update tcb
+        // getcontext(saveloc);
+        // increment PC counter to be directly after suspend
         cpu::interrupt_enable_suspend();
     }
+
+    assert_interrupts_disabled();
 }
