@@ -1,0 +1,6 @@
+in hello before yield
+in hello after yield
+in goodbye before yield 1
+in goodbye after yield 1 but before yield 2
+in goodbye after yield 2
+All CPUs suspended.  Exiting.
