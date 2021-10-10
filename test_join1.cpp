@@ -1,36 +1,39 @@
 #include <iostream>
 #include "thread.h"
 
-void goodbye(void*);
-void hello(void *);
+// TEST JOIN 1
+// tests thread::join
+// one parent thread, two child threads
+// one call to join on first child thread
+// create second child thread after returing from join on first child thread
 
-void printFromJoin(void* a)
+void child(void* a)
 {
-    thread::yield();
-    std::cout << "Goodbye! From thread: " << (intptr_t)a << "\n";
+    std::cout << "in child " << (intptr_t) a << std::endl;
 }
 
-void goodbye(void* a)
+void parent(void *a)
 {
-    std::cout << "Goodbye! From thread: " << (intptr_t)a << "\n";
-}
+    std::cout << "starting parent" << std::endl;
 
-void hello(void *a)
-{
-    std::cout << "Hello, world!" << std::endl;
+    thread t1((thread_startfunc_t) child, (void *) 1);
 
-    intptr_t one = 1;
-    intptr_t two = 2;
-    intptr_t three = 3;
-    thread t1((thread_startfunc_t) goodbye, (void *) one);
+    std::cout << "in parent before join on child 1" << std::endl;
     t1.join();
-    thread t2((thread_startfunc_t) printFromJoin, (void *) two);
-    //t2.join();
-    thread t3((thread_startfunc_t) goodbye, (void *) three);
+    std::cout << "in parent after join on child 1" << std::endl;
+
+    thread t2((thread_startfunc_t) child, (void *) 2);
+
+    // std::cout << "in parent before join on child 2" << std::endl;
+    // t2.join();
+    // std::cout << "in parent before join on child 2" << std::endl;
+
+    // thread t3((thread_startfunc_t) child, (void *) 3);
+
+    std::cout << "exiting parent" << std::endl;
 }
 
 int main()
 {
-    cpu::boot(1, (thread_startfunc_t) hello, (void *) 100, false, false, 0);
-    std::cout << "finishing boot" << std::endl;
+    cpu::boot(1, (thread_startfunc_t) parent, (void *) 0, false, false, 0);
 }
