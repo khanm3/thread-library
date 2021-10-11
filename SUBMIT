@@ -1,5 +1,6 @@
 cpu.cpp
 thread.cpp
+mutex.cpp
 types.h
 types.cpp
 test*.cpp
