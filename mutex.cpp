@@ -4,7 +4,6 @@
 
 class mutex::impl {
     public:
-        bool free;
         std::queue<TcbPtr> lockQueue;
         Tcb *owner;
 };
@@ -12,7 +11,6 @@ class mutex::impl {
 mutex::mutex() {
     cpu::interrupt_disable(); // do we need to disable interrupts
     impl_ptr = new impl();
-    impl_ptr->free = true;
     impl_ptr->lockQueue = std::queue<TcbPtr>();
     impl_ptr->owner = nullptr;
     cpu::interrupt_enable();
@@ -27,16 +25,13 @@ void mutex::lock() {
 
     TcbPtr &currThread = runningList[cpu::self()];
 
-    if (!impl_ptr->free) {
+    if (impl_ptr->owner) {
         // if lock is not free, add thread to lock's waiting queue and switch
-        assert(impl_ptr->owner);
         *currThread->state = BLOCKED;
         impl_ptr->lockQueue.push(std::move(currThread));
         switch_to_next_or_suspend(&impl_ptr->lockQueue.back()->ctx);
     } else {
         // else, acquire the lock
-        assert(!impl_ptr->owner);
-        impl_ptr->free = false;
         impl_ptr->owner = currThread.get();
     }
     cpu::interrupt_enable();
@@ -50,7 +45,6 @@ void mutex::unlock() {
         throw std::runtime_error("error: thread tried to unlock mutex not belonging to it");
     }
 
-    impl_ptr->free = true;
     impl_ptr->owner = nullptr;
 
     if(!impl_ptr->lockQueue.empty()) {
@@ -58,7 +52,6 @@ void mutex::unlock() {
         *threadToLock->state = READY;
         readyQueue.push(std::move(threadToLock));
         impl_ptr->lockQueue.pop();
-        impl_ptr->free = false;
         impl_ptr->owner = readyQueue.back().get();
     }
     cpu::interrupt_enable();

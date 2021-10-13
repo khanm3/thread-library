@@ -10,7 +10,10 @@ void goodbye(void* a)
 {
     m.lock();
     std::cout << "locked once" << (intptr_t)a << "\n";
-    m.lock(); // should deadlock
+    m.unlock();
+    std::cout << "unlocked once" << (intptr_t)a << "\n";
+    m.unlock();
+    std::cout << "unlocked twice" << (intptr_t)a << "\n"; // error should be thrown before this prints
 }
 
 void hello(void *a)
