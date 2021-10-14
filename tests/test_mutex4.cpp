@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stdexcept>
 #include "thread.h"
 
 void goodbye(void*);
@@ -12,7 +13,13 @@ void goodbye(void* a)
     std::cout << "locked once" << (intptr_t)a << "\n";
     m.unlock();
     std::cout << "unlocked once" << (intptr_t)a << "\n";
-    m.unlock();
+    try {
+        m.unlock();
+    }
+    catch (std::runtime_error &e) {
+        std::cout << e.what() << std::endl;
+        exit(0);
+    }
     std::cout << "unlocked twice" << (intptr_t)a << "\n"; // error should be thrown before this prints
 }
 
