@@ -1,3 +1,6 @@
+#ifndef _MUTEXIMPL_H
+#define _MUTEXIMPL_H
+
 #include "mutex.h"
 #include "types.h"
 
@@ -10,3 +13,5 @@ public:
     void lockHelper();
     void unlockHelper();
 };
+
+#endif
