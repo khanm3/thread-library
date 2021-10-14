@@ -34,20 +34,7 @@ void thread::yield() {
     cpu::interrupt_disable();
     // TODO: MULTIPROCESSOR - acquire guard
 
-    // there is a next ready thread
-    if (!readyQueue.empty()) {
-        // put current thread on ready queue
-        assert(runningList.find(cpu::self()) != runningList.end());
-        TcbPtr &currThread = runningList[cpu::self()];
-        *(currThread->state) = READY;
-        readyQueue.push(std::move(currThread));
-
-        // switch to next ready thread
-        switch_to_next_or_suspend(&readyQueue.back()->ctx);
-
-        // if there are any threads on the finished list, clean them up
-        cleanup_finished_list();
-    }
+    yield_helper();
 
     // TODO: MULTIPROCESSOR - free guard
     cpu::interrupt_enable();

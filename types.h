@@ -60,4 +60,6 @@ void switch_to_next_or_suspend(ucontext_t *);
 
 void cleanup_finished_list();
 
+void yield_helper();
+
 #endif
