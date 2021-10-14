@@ -62,4 +62,6 @@ void cleanup_finished_list();
 
 void yield_helper();
 
+void handle_timer();
+
 #endif

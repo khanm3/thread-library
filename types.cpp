@@ -124,3 +124,13 @@ void yield_helper() {
         cleanup_finished_list();
     }
 }
+
+void handle_timer() {
+    cpu::interrupt_disable();
+    // TODO: MULTIPROCESSOR - acquire guard
+
+    yield_helper();
+
+    // TODO: MULTIPROCESSOR - free guard
+    cpu::interrupt_enable();
+}
