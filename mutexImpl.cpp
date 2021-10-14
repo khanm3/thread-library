@@ -17,6 +17,9 @@ void mutex::impl::lockHelper()  {
 
         // switch to next ready thread if there is one, else suspend
         switch_to_next_or_suspend(&lockQueue.back()->ctx);
+
+        // if there are any threads on the finished list, clean them up
+        cleanup_finished_list();
     }
     // lock is free
     else {
