@@ -6,11 +6,17 @@ THREAD_SOURCES=cpu.cpp types.cpp thread.cpp mutex.cpp
 # Generate the names of the thread library's object files
 THREAD_OBJS=${THREAD_SOURCES:.cpp=.o}
 
+# Directory containing test source files
+TEST_DIR=tests
+
 # List of test files
-TEST_SOURCES=$(sort $(wildcard test*.cpp))
+TEST_SOURCES=$(sort $(wildcard ${TEST_DIR}/test*.cpp))
+
+# List of test files without the base directory
+TEST_SOURCES_NO_DIR=$(subst ${TEST_DIR}/,,${TEST_SOURCES})
 
 # Generate the names of the test executables
-TESTS=${TEST_SOURCES:.cpp=}
+TESTS=$(subst .cpp,,${TEST_SOURCES_NO_DIR})
 
 # Generate the runtest target name for all tests
 RUNTESTS=$(subst test,runtest,${TESTS})
@@ -23,21 +29,24 @@ libthread.o: ${THREAD_OBJS}
 	ld -r -o $@ ${THREAD_OBJS}
 
 # Compile a test program
-test%: test%.cpp libthread.o libcpu.o
-	${CC} -o $@ $^ -ldl -pthread
+# Generates the executable in the base project directory
+test%: ${TEST_DIR}/test%.cpp libthread.o libcpu.o
+	${CC} -o $@ $^ -ldl -pthread -I.
 
 # Compile all test programs
 alltests: ${TESTS}
 
 # Run a test and diff check
-runtest%: test% test%.out.correct
-	./$< > $<.out
-	diff -q $<.out $<.out.correct
+# Generates the output file in the test directory
+runtest%: test% ${TEST_DIR}/test%.out.correct
+	./$< > ${TEST_DIR}/$<.out
+	diff -q ${TEST_DIR}/$<.out ${TEST_DIR}/$<.out.correct
 	@echo
 
 # Run a test
+# Generates the output file in the test directory
 runtest%: test%
-	./$< > $<.out
+	./$< > ${TEST_DIR}/$<.out
 	@echo "no .out.correct file, not diffing"
 	@echo
 
@@ -55,4 +64,4 @@ app: app.cpp libthread.o libcpu.o
 	${CC} -c $<
 
 clean:
-	rm -f ${THREAD_OBJS} libthread.o app ${TESTS} *.out
+	rm -f ${THREAD_OBJS} libthread.o app ${TESTS} ${TEST_DIR}/*.out
