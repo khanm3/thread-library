@@ -1,0 +1,6 @@
+in thread a, i starting at 0
+in thread a, waiting while i is equal to 0
+in thread b, incrementing i from 0 to 1
+in thread b, signalling a that i != 0
+in thread a, i is equal to 1
+All CPUs suspended.  Exiting.

@@ -1,13 +1,11 @@
 #include <cassert>
 #include "mutex.h"
-#include "types.h"
 #include "mutexImpl.h"
+#include "types.h"
 
 mutex::mutex() {
     cpu::interrupt_disable(); // do we need to disable interrupts
     impl_ptr = new impl();
-    impl_ptr->lockQueue = std::queue<TcbPtr>();
-    impl_ptr->owner = nullptr;
     cpu::interrupt_enable();
 }
 
@@ -17,12 +15,20 @@ mutex::~mutex() {
 
 void mutex::lock() {
     cpu::interrupt_disable();
+    // TODO: MULTIPROCESSOR - acquire guard
+
     impl_ptr->lockHelper();
+
+    // TODO: MULTIPROCESSOR - release guard
     cpu::interrupt_enable();
 }
 
 void mutex::unlock() {
     cpu::interrupt_disable();
+    // TODO: MULTIPROCESSOR - acquire guard
+
     impl_ptr->unlockHelper();
+
+    // TODO: MULTIPROCESSOR - release guard
     cpu::interrupt_enable();
 }
