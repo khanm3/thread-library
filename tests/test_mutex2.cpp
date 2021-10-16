@@ -1,43 +1,24 @@
 #include <iostream>
-#include <cstdlib>
 #include "thread.h"
 
-using std::cout;
-using std::endl;
+mutex m;
 
-int g = 0;
+void locker(void *a) {
+    std::cout << "Thread: " << (char *) a << " locking\n";
+    m.lock();
 
-mutex mutex1;
+    std::cout << "Thread: " << (char *) a << " yielding\n";
+    thread::yield();
 
-void loop(void *a)
-{
-    char *id = (char *) a;
-    int i;
+    std::cout << "Thread: " << (char *) a << " unlocking\n";
+    m.unlock();
 
-    mutex1.lock();
-    cout << "loop called with id " << id << endl;
-
-    for (i=0; i<5; i++, g++) {
-	cout << id << ":\t" << i << "\t" << g << endl;
-        mutex1.unlock();
-	thread::yield();
-        mutex1.lock();
-    }
-    cout << id << ":\t" << i << "\t" << g << endl;
-    mutex1.unlock();
+    std::cout << "Thread: " << (char *) a << " finishing\n";
 }
 
-void parent(void *a)
-{
-    intptr_t arg = (intptr_t) a;
-
-    mutex1.lock();
-    cout << "parent called with arg " << arg << endl;
-    mutex1.unlock();
-
-    thread t1 ( (thread_startfunc_t) loop, (void *) "child thread");
-
-    loop( (void *) "parent thread");
+void parent(void *a) {
+    thread t1 ( (thread_startfunc_t) locker, (void *) "1");
+    thread t2 ( (thread_startfunc_t) locker, (void *) "2");
 }
 
 int main()

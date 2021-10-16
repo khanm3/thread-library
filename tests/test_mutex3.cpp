@@ -1,28 +1,31 @@
 #include <iostream>
+#include <cstring>
 #include "thread.h"
-
-void goodbye(void*);
-void hello(void *);
 
 mutex m;
 
-void goodbye(void* a)
-{
+void locker(void *a) {
+    std::cout << "Thread: " << (char *) a << " locking\n";
     m.lock();
-    std::cout << "locked once" << (intptr_t)a << "\n";
-    m.lock(); // should deadlock
+
+    if (!strcmp((char*)a, "1")) {
+        std::cout << "Thread: " << (char *) a << " yielding\n";
+        thread::yield();
+        thread t3 ( (thread_startfunc_t) locker, (void *) "3");
+    }
+
+    std::cout << "Thread: " << (char *) a << " unlocking\n";
+    m.unlock();
+    
+    std::cout << "Thread: " << (char *) a << " finishing\n";
 }
 
-void hello(void *a)
-{
-    std::cout << "Hello, world!" << std::endl;
-
-    intptr_t one = 1;
-    thread t1((thread_startfunc_t) goodbye, (void *) one);
+void parent(void *a) {
+    thread t1 ( (thread_startfunc_t) locker, (void *) "1");
+    thread t2 ( (thread_startfunc_t) locker, (void *) "2");
 }
 
 int main()
 {
-    cpu::boot(1, (thread_startfunc_t) hello, (void *) 100, false, false, 0);
-    std::cout << "finishing boot" << std::endl;
+    cpu::boot(1, (thread_startfunc_t) parent, (void *) 100, false, false, 0);
 }
