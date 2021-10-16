@@ -1,28 +1,54 @@
 #include <iostream>
+#include <cstdlib>
 #include "thread.h"
 
-void goodbye(void*);
-void hello(void *);
+using std::cout;
+using std::endl;
 
-mutex m;
+int g = 0;
 
-void goodbye(void* a)
+mutex mutex1;
+
+void loop(void *a)
 {
-    m.lock();
-    std::cout << "Goodbye! From thread: " << (intptr_t)a << "\n";
-    m.unlock();
+    char *id = (char *) a;
+    int i;
+
+    mutex1.lock();
+    cout << "loop called with id " << id << endl;
+
+    for (i=0; i<5; i++, g++) {
+	cout << id << ":\t" << i << "\t" << g << endl;
+        mutex1.unlock();
+	thread::yield();
+        mutex1.lock();
+    }
+    cout << id << ":\t" << i << "\t" << g << endl;
+    mutex1.unlock();
 }
 
-void hello(void *a)
+void parent(void *a)
 {
-    std::cout << "Hello, world!" << std::endl;
+    intptr_t arg = (intptr_t) a;
 
-    intptr_t one = 1;
-    thread t1((thread_startfunc_t) goodbye, (void *) one);
+    mutex1.lock();
+    cout << "parent called with arg " << arg << endl;
+    mutex1.unlock();
+
+    thread t1 ( (thread_startfunc_t) loop, (void *) "child thread");
+
+    loop( (void *) "parent thread");
+
+    // ! ! ! ! ! !
+
+    cout << "moving on to part 2\n";
+    mutex1.lock();
+    cout << "locked once" << (intptr_t)a << "\n";
+    mutex1.lock(); // should deadlock
+    cout << "locked twice" << (intptr_t)a << "\n";
 }
 
 int main()
 {
-    cpu::boot(1, (thread_startfunc_t) hello, (void *) 100, false, false, 0);
-    std::cout << "finishing boot" << std::endl;
+    cpu::boot(1, (thread_startfunc_t) parent, (void *) 100, false, false, 0);
 }
