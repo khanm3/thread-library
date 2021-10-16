@@ -1,0 +1,16 @@
+1 pre-lock
+1 waiting
+2 pre-lock
+2 waiting
+3 pre-lock
+3 waiting
+0 pre-lock
+0 critical
+0 end
+1 critical
+1 end
+2 critical
+2 end
+3 critical
+3 end
+All CPUs suspended.  Exiting.
