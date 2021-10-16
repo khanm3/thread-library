@@ -1,7 +1,0 @@
-in parent 0 before join 1
-in child 1
-in parent 0 after join 1
-in parent 0 before join 2
-in child 2
-in parent 0 after join 2
-All CPUs suspended.  Exiting.

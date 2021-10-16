@@ -1,5 +1,9 @@
-in parent before first call to join
-in child
-in parent after first call to join and before second call to join
-in parent after second call to join
+child pre-yield
+0 pre-join
+1 pre-join
+2 pre-join
+child end
+0 end
+1 end
+2 end
 All CPUs suspended.  Exiting.

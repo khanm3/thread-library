@@ -1,7 +1,5 @@
-starting parent
-in parent before join on child 1
-in child 1
-in parent after join on child 1
-exiting parent
-in child 2
+child pre-yield
+0 pre-join
+child end
+0 end
 All CPUs suspended.  Exiting.
