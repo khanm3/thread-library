@@ -13,7 +13,7 @@ class thread::impl {
 };
 
 thread::thread(thread_startfunc_t body, void *arg) {
-	cpu::interrupt_disable();
+	RaiiLock l;
     // TODO: MULTIPROCESSOR - switch invariant - acquire guard
     impl_ptr = new impl();
 
@@ -23,7 +23,6 @@ thread::thread(thread_startfunc_t body, void *arg) {
     impl_ptr->joinQueue = readyQueue.back()->joinQueue;
     // TODO: MULTIPROCESSOR - IPI to available CPU
     // TODO: MULTIPROCESSOR - free guard
-    cpu::interrupt_enable();
 }
 
 thread::~thread() {
@@ -31,17 +30,16 @@ thread::~thread() {
 }
 
 void thread::yield() {
-    cpu::interrupt_disable();
+    RaiiLock l;
     // TODO: MULTIPROCESSOR - acquire guard
 
     yield_helper();
 
     // TODO: MULTIPROCESSOR - free guard
-    cpu::interrupt_enable();
 }
 
 void thread::join() {
-    cpu::interrupt_disable();
+    RaiiLock l;
     // TODO: MULTIPROCESSOR - acquire guard
 
     // TODO: check currThread TCB is valid (state, joinQueue, stack)
@@ -70,5 +68,4 @@ void thread::join() {
     }
 
     // TODO: MULTIPROCESSOR - free guard
-    cpu::interrupt_enable();
 }

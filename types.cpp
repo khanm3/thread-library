@@ -34,6 +34,16 @@ void Tcb::freeStack() {
     stackPtr = nullptr;
 }
 
+RaiiLock::RaiiLock() {
+    assert_interrupts_enabled();
+    cpu::interrupt_disable();
+}
+
+RaiiLock::~RaiiLock() {
+    assert_interrupts_disabled();
+    cpu::interrupt_enable();
+}
+
 void os_wrapper(thread_startfunc_t body, void *arg) {
     assert_interrupts_disabled();
     // do os stuff
@@ -126,11 +136,10 @@ void yield_helper() {
 }
 
 void handle_timer() {
-    cpu::interrupt_disable();
+    RaiiLock l;
     // TODO: MULTIPROCESSOR - acquire guard
 
     yield_helper();
 
     // TODO: MULTIPROCESSOR - free guard
-    cpu::interrupt_enable();
 }

@@ -17,7 +17,7 @@ cv::~cv() {
 }
 
 void cv::wait(mutex &m) {
-    cpu::interrupt_disable();
+	RaiiLock l;
     // TODO: MULTIPROCESSOR - acquire guard
 
     // release m
@@ -41,11 +41,10 @@ void cv::wait(mutex &m) {
     m.impl_ptr->lockHelper();
 
     // TODO: MULTIPROCESSOR - free guard
-    cpu::interrupt_enable();
 }
 
 void cv::signal() {
-    cpu::interrupt_disable();
+	RaiiLock l;
     // TODO: MULTIPROCESSOR - acquire guard
 
     // move the next waiting thread to the ready queue if there is one
@@ -56,11 +55,10 @@ void cv::signal() {
     }
 
     // TODO: MULTIPROCESSOR - free guard
-    cpu::interrupt_enable();
 }
 
 void cv::broadcast() {
-    cpu::interrupt_disable();
+	RaiiLock l;
     // TODO: MULTIPROCESSOR - acquire guard
 
     // move all waiting threads to the ready queue if there are any
@@ -71,5 +69,4 @@ void cv::broadcast() {
     }
 
     // TODO: MULTIPROCESSOR - free guard
-    cpu::interrupt_enable();
 }

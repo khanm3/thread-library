@@ -45,6 +45,12 @@ public:
     std::shared_ptr<std::queue<std::unique_ptr<Tcb>>> joinQueue;
 };
 
+class RaiiLock {
+public:
+    RaiiLock();
+    ~RaiiLock();
+};
+
 using TcbPtr = std::unique_ptr<Tcb>;
 using ThreadStatePtr = std::shared_ptr<ThreadState>;
 using JoinQueuePtr = std::shared_ptr<std::queue<TcbPtr>>;
