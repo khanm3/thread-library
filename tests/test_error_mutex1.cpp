@@ -18,7 +18,8 @@ void goodbye(void* a)
     }
     catch (std::runtime_error &e) {
         std::cout << e.what() << std::endl;
-        exit(0);
+        assert_interrupts_enabled();
+        return;
     }
     std::cout << "unlocked twice" << (intptr_t)a << "\n"; // error should be thrown before this prints
 }
