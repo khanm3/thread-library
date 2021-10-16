@@ -2,8 +2,10 @@
 #include "types.h"
 #include "thread.h"
 
+void f1(void *);
+void f2(void *); 
 
-void f1() {
+void f1(void * a) {
     intptr_t i = 0;
     while(true) {
     try {
