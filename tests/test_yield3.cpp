@@ -30,6 +30,8 @@ void f2(void *a) {
 
 void f1(void *a) {
     std::cout << "1" << std::endl;
+    // Nothing on the ready queue
+    thread::yield();
 
     thread t2((thread_startfunc_t) f2, (void *) 0);
 
