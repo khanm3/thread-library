@@ -93,7 +93,6 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
 
 void switch_to_next_or_suspend(ucontext_t *saveloc) {
     assert_interrupts_disabled();
-
     assert(runningList.find(cpu::self()) != runningList.end());
     TcbPtr &currThread = runningList[cpu::self()];
     // TODO: assert currThread points to an "empty" Tcb
@@ -111,6 +110,7 @@ void switch_to_next_or_suspend(ucontext_t *saveloc) {
     // else no other threads, save tcb to saveloc then suspend
     else {
         // switch to kernel suspend thread
+        makecontext(suspendCtx, (void (*)()) suspend_thread, 0);
         swapcontext(saveloc, suspendCtx);
     }
 

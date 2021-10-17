@@ -17,12 +17,14 @@ void cpu::init(thread_startfunc_t body, void *arg) {
 
     if (body) {
         // initialize kernel suspend thread
+        
+        // Not convinced this will always work.
+        // Do we need to free and re-new the stack between uses?
         suspendCtx->uc_stack.ss_sp = new char[STACK_SIZE];
         suspendCtx->uc_stack.ss_size = STACK_SIZE;
         suspendCtx->uc_stack.ss_flags = 0;
         suspendCtx->uc_link = nullptr;
         makecontext(suspendCtx, (void (*)()) suspend_thread, 0);
-
         // create tcb object and put it on the running list
         TcbPtr &threadToRun = runningList[cpu::self()];
         threadToRun = TcbPtr(new Tcb(RUNNING, body, arg));
