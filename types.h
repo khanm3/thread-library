@@ -59,6 +59,7 @@ extern std::queue<TcbPtr> readyQueue;
 extern std::vector<TcbPtr> finishedList;
 extern std::map<cpu *, TcbPtr> runningList;
 extern ucontext_t *dummyCtx;
+extern ucontext_t *suspendCtx;
 
 void os_wrapper(thread_startfunc_t, void *);
 
@@ -69,5 +70,11 @@ void cleanup_finished_list();
 void yield_helper();
 
 void handle_timer();
+
+void send_ipi();
+
+void handle_ipi();
+
+void suspend_thread();
 
 #endif

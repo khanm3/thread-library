@@ -49,5 +49,8 @@ void mutex::impl::unlockHelper() {
         // make the lock held again, this time by the thread the lock is being
         // handed off to
         owner = readyQueue.back().get();
+
+        // TODO: send IPI
+        send_ipi();
     }
 }

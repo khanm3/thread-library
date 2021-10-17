@@ -21,7 +21,8 @@ thread::thread(thread_startfunc_t body, void *arg) {
     readyQueue.push(TcbPtr(new Tcb(READY, body, arg)));
     impl_ptr->state = readyQueue.back()->state;
     impl_ptr->joinQueue = readyQueue.back()->joinQueue;
-    // TODO: MULTIPROCESSOR - IPI to available CPU
+    // TODO: send IPI
+    send_ipi();
     // TODO: MULTIPROCESSOR - free guard
 }
 

@@ -5,6 +5,7 @@ std::queue<TcbPtr> readyQueue;
 std::vector<TcbPtr> finishedList;
 std::map<cpu *, TcbPtr> runningList;
 ucontext_t *dummyCtx = new ucontext_t;
+ucontext_t *suspendCtx = new ucontext_t;
 
 Tcb::Tcb()
     : ctx(ucontext_t())
@@ -37,10 +38,14 @@ void Tcb::freeStack() {
 RaiiLock::RaiiLock() {
     assert_interrupts_enabled();
     cpu::interrupt_disable();
+    while (cpu::guard.exchange(true)) {
+        /* MT */
+    }
 }
 
 RaiiLock::~RaiiLock() {
     assert_interrupts_disabled();
+    cpu::guard.store(false);
     cpu::interrupt_enable();
 }
 
@@ -52,15 +57,17 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
     cleanup_finished_list();
 
     // enable interrupts - switch invariant
+    cpu::guard.store(false);
     cpu::interrupt_enable();
-
-    // TODO: MULTIPROCESSOR - switch invariant - acquire guard
 
     // run thread to finish
     body(arg);
 
     // disable interrupts - switch invariant
     cpu::interrupt_disable();
+    while (cpu::guard.exchange(true)) {
+        /* MT */
+    }
 
     // get tcb of currently running thread
     assert(runningList.find(cpu::self()) != runningList.end());
@@ -72,6 +79,9 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
         readyQueue.push(std::move(currThread->joinQueue->front()));
         currThread->joinQueue->pop();
     }
+
+    // TODO: send IPI
+    send_ipi();
 
     // move tcb of currently running thread to finished list
     *(currThread->state) = FINISHED;
@@ -100,10 +110,8 @@ void switch_to_next_or_suspend(ucontext_t *saveloc) {
     }
     // else no other threads, save tcb to saveloc then suspend
     else {
-        // TODO: multiprocessor - update tcb
-        // getcontext(saveloc);
-        // increment PC counter to be directly after suspend
-        cpu::interrupt_enable_suspend();
+        // switch to kernel suspend thread
+        swapcontext(saveloc, suspendCtx);
     }
 
     assert_interrupts_disabled();
@@ -127,6 +135,8 @@ void yield_helper() {
         *(currThread->state) = READY;
         readyQueue.push(std::move(currThread));
 
+        // TODO: send IPI: do we need to send an IPI here?
+
         // switch to next ready thread
         switch_to_next_or_suspend(&readyQueue.back()->ctx);
 
@@ -142,4 +152,48 @@ void handle_timer() {
     yield_helper();
 
     // TODO: MULTIPROCESSOR - free guard
+}
+
+void send_ipi() {
+    assert_interrupts_disabled();
+    assert(cpu::guard);
+
+    // send IPIs if there's work to do
+    if (!readyQueue.empty()) {
+        // loop through list of CPUs
+        size_t i = 0;
+        for (auto& cpuTcbPair : runningList) {
+            if (i >= readyQueue.size()) {
+                break;
+            }
+            // send IPI if CPU is suspended
+            if (!cpuTcbPair.second) {
+                cpuTcbPair.first->interrupt_send();
+                ++i;
+            }
+        }
+    }
+}
+
+void handle_ipi() {
+    RaiiLock l;
+
+    // if there's work to do, do it
+    if (!readyQueue.empty()) {
+        TcbPtr &threadToRun = runningList[cpu::self()];
+        *(readyQueue.front()->state) = RUNNING;
+        threadToRun = std::move(readyQueue.front());
+        readyQueue.pop();
+        setcontext(&threadToRun->ctx);
+    }
+    // else, suspend
+    else {
+        cpu::guard.store(false);
+        cpu::interrupt_enable_suspend();
+    }
+}
+
+void suspend_thread() {
+    cpu::guard.store(false);
+    cpu::interrupt_enable_suspend();
 }

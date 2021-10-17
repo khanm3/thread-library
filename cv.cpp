@@ -52,6 +52,9 @@ void cv::signal() {
         *(impl_ptr->waitQueue.front()->state) = READY;
         readyQueue.push(std::move(impl_ptr->waitQueue.front()));
         impl_ptr->waitQueue.pop();
+
+        // TODO: send IPI
+        send_ipi();
     }
 
     // TODO: MULTIPROCESSOR - free guard
@@ -67,6 +70,9 @@ void cv::broadcast() {
         readyQueue.push(std::move(impl_ptr->waitQueue.front()));
         impl_ptr->waitQueue.pop();
     }
+
+    // TODO: send IPI
+    send_ipi();
 
     // TODO: MULTIPROCESSOR - free guard
 }
