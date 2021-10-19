@@ -1,0 +1,9 @@
+Thread: 1 locking
+Thread: 1 yielding
+Thread: 2 locking
+Thread: 1 unlocking
+Thread: 1 finishing
+Thread: 2 yielding
+Thread: 2 unlocking
+Thread: 2 finishing
+All CPUs suspended.  Exiting.
