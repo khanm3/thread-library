@@ -1,0 +1,5 @@
+0 pre-lock
+0 exit while holding lock
+1 attempting to unlock
+runtime error: 1 tried to free a lock that 0 holds
+All CPUs suspended.  Exiting.
