@@ -92,7 +92,8 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
         currThread->joinQueue->pop();
     }
 
-    // TODO: MULTIPROCESSOR - send IPI
+    // send IPI
+    send_ipi();
 
     // move tcb of currently running thread to finished list
     *(currThread->state) = FINISHED;
@@ -113,6 +114,9 @@ void switch_to_next_or_suspend(ucontext_t *saveloc) {
     if (!readyQueue.empty()) {
         // update cpu state to running
         cpu::self()->impl_ptr->state = CPU_RUNNING;
+
+        // debug
+        std::printf("%p switching to new thread\n", (void *) cpu::self());
 
         // move top tcb from ready queue onto running list
         currThread = std::move(readyQueue.front());
@@ -137,21 +141,28 @@ void switch_to_next_or_suspend(ucontext_t *saveloc) {
         // update cpu state to suspended
         cpu::self()->impl_ptr->state = CPU_SUSPENDED;
 
+        // debug
+        std::printf("%p suspending\n", (void *) cpu::self());
+
         // put empty tcb ptr (unique pointer that doesn't manage a resource)
         // onto running list
         currThread = TcbPtr();
 
+        // remake suspendCtx
+        ucontext_t *suspendCtx = cpu::self()->impl_ptr->suspendCtx;
+        makecontext(suspendCtx, (void (*)()) os_suspend, 0);
+
         // if saveloc is valid, update saveloc with current registers
         // and swap context to suspend thread
         if (saveloc) {
-            swapcontext(saveloc, cpu::self()->impl_ptr->suspendCtx);
+            swapcontext(saveloc, suspendCtx);
 
             // switch invariant - assert interrupts disabled after returning from switch
             assert_interrupts_disabled();
         }
         // else, discard current registers and set context to suspend thread
         else {
-            setcontext(cpu::self()->impl_ptr->suspendCtx);
+            setcontext(suspendCtx);
         }
     }
 
@@ -198,11 +209,54 @@ void os_suspend() {
     while (true) {
         assert_interrupts_disabled();
 
-        // debug
-        // std::printf("%p suspend\n", (void *) cpu::self());
-
         // switch invariant - release lock on processor before suspending
         RaiiLock::releaseGuard();
         cpu::interrupt_enable_suspend();
+    }
+}
+
+void handle_ipi() {
+    // switch invariant - acquire lock on processor before handling shared
+    //                    data structures + switching
+    RaiiLock::lock();
+
+    // if another thread on ready queue, switch to it
+    if (!readyQueue.empty()) {
+        // update cpu state to running
+        cpu::self()->impl_ptr->state = CPU_RUNNING;
+
+        // debug
+        std::printf("%p set to running\n", (void *) cpu::self());
+
+        // move top tcb from ready queue onto running list
+        TcbPtr &currThread = runningList[cpu::self()];
+        currThread = std::move(readyQueue.front());
+        readyQueue.pop();
+        *(currThread->state) = RUNNING;
+
+        // discard current registers and set context to new current thread
+        setcontext(&currThread->ctx);
+    }
+
+    // else no other threads, return to the os_suspend stack frame, then suspend
+    else {
+        // update cpu state to suspended
+        cpu::self()->impl_ptr->state = CPU_RUNNING;
+
+        // debug
+        std::printf("%p woken up, going back to sleep\n", (void *) cpu::self());
+    }
+}
+
+void send_ipi() {
+    assert_interrupts_disabled();
+
+    if (!readyQueue.empty()) {
+        for (auto &[cpuPtr, tcbPtr] : runningList) {
+            if (cpuPtr->impl_ptr->state == CPU_SUSPENDED) {
+                cpuPtr->impl_ptr->state = CPU_RECIEVING_IPI;
+                cpuPtr->interrupt_send();
+            }
+        }
     }
 }

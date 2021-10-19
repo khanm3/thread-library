@@ -12,7 +12,7 @@ void cpu::init(thread_startfunc_t body, void *arg) {
 
     // initialize interrupt vector table
     interrupt_vector_table[cpu::TIMER] = handle_timer;
-    // TODO: implement IPI interrupt handler
+    interrupt_vector_table[cpu::IPI] = handle_ipi;
 
     // allocate impl_ptr
     impl_ptr = new impl();
@@ -22,7 +22,7 @@ void cpu::init(thread_startfunc_t body, void *arg) {
         impl_ptr->state = CPU_RUNNING;
 
         // debug
-        // printf("%p initialized to running\n", cpu::self());
+        printf("%p initialized to running\n", cpu::self());
 
         // create tcb object and put it on the running list
         TcbPtr &threadToRun = runningList[cpu::self()];
@@ -36,7 +36,7 @@ void cpu::init(thread_startfunc_t body, void *arg) {
         impl_ptr->state = CPU_SUSPENDED;
 
         // debug
-        // printf("%p initialized to suspended\n", cpu::self());
+        printf("%p initialized to suspended\n", cpu::self());
 
         // create empty tcbptr (unique pointer that doesn't manage a resource)
         // and put it on the running list

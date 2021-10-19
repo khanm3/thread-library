@@ -76,4 +76,8 @@ void handle_timer();
 
 void os_suspend();
 
+void handle_ipi();
+
+void send_ipi();
+
 #endif

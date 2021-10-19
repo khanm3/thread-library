@@ -57,6 +57,7 @@ void mutex::impl::unlockHelper() {
         // handed off to
         owner = readyQueue.back().get();
 
-        // TODO: MULTIPROCESSOR - send IPI
+        // send IPI
+        send_ipi();
     }
 }

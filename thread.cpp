@@ -21,7 +21,8 @@ thread::thread(thread_startfunc_t body, void *arg) {
     impl_ptr->state = readyQueue.back()->state;
     impl_ptr->joinQueue = readyQueue.back()->joinQueue;
 
-    // TODO: MULTIPROCESSOR - send IPI
+    // send IPI
+    send_ipi();
 }
 
 thread::~thread() {

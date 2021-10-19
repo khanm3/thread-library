@@ -9,6 +9,7 @@ enum CpuState {
     CPU_INITIALIZED,
     CPU_RUNNING,
     CPU_SUSPENDED,
+    CPU_RECIEVING_IPI,
 };
 
 class cpu::impl {
