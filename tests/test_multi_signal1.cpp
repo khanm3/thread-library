@@ -2,6 +2,10 @@
 #include <iostream>
 #include "thread.h"
 
+// if CPUs that are passed nullptr run the next ready thread if there is one
+// and suspend otherwise, rather than only ever suspending, this test case will
+// sometimes have both CPUs initialized to running in its debug output
+
 mutex m;
 cv c;
 int k = 0;

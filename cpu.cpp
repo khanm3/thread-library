@@ -32,17 +32,45 @@ void cpu::init(thread_startfunc_t body, void *arg) {
         setcontext(&threadToRun->ctx);
     }
     else {
-        // set cpu state to suspended
-        impl_ptr->state = CPU_SUSPENDED;
+        /* ALTERNATIVE: use helper function */
+        /* note: the debug output with the helper function is less precise */
+        // create empty tcbPtr and put it on the running list
+        // runningList[cpu::self()];
+        // switch to next ready thread if there is one, else suspend
+        // switch_to_next_or_suspend(nullptr);
 
-        // debug
-        printf("%p initialized to suspended\n", cpu::self());
 
-        // create empty tcbptr (unique pointer that doesn't manage a resource)
-        // and put it on the running list
-        runningList[cpu::self()] = TcbPtr();
+        // if there's a ready thread, switch to it
+        if (!readyQueue.empty()) {
+            // update cpu state to running
+            cpu::self()->impl_ptr->state = CPU_RUNNING;
 
-        // begin executing suspend thread
-        setcontext(impl_ptr->suspendCtx);
+            // debug
+            std::printf("%p initialized to running\n", (void *) cpu::self());
+
+            // move top tcb from ready queue onto running list
+            TcbPtr &threadToRun = runningList[cpu::self()];
+            threadToRun = std::move(readyQueue.front());
+            readyQueue.pop();
+            *(threadToRun->state) = RUNNING;
+
+            // begin executing thread
+            setcontext(&threadToRun->ctx);
+        }
+        // else there's no threads to run, so suspend
+        else {
+            // set cpu state to suspended
+            impl_ptr->state = CPU_SUSPENDED;
+
+            // debug
+            printf("%p initialized to suspended\n", cpu::self());
+
+            // create empty tcbptr (unique pointer that doesn't manage a resource)
+            // and put it on the running list
+            runningList[cpu::self()] = TcbPtr();
+
+            // begin executing suspend thread
+            setcontext(impl_ptr->suspendCtx);
+        }
     }
 }
