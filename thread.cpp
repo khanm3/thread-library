@@ -14,15 +14,14 @@ class thread::impl {
 
 thread::thread(thread_startfunc_t body, void *arg) {
 	RaiiLock l;
-    // TODO: MULTIPROCESSOR - switch invariant - acquire guard
     impl_ptr = new impl();
 
     // create tcb and put it onto ready queue
     readyQueue.push(TcbPtr(new Tcb(READY, body, arg)));
     impl_ptr->state = readyQueue.back()->state;
     impl_ptr->joinQueue = readyQueue.back()->joinQueue;
-    // TODO: MULTIPROCESSOR - IPI to available CPU
-    // TODO: MULTIPROCESSOR - free guard
+
+    // TODO: MULTIPROCESSOR - send IPI
 }
 
 thread::~thread() {
@@ -31,16 +30,11 @@ thread::~thread() {
 
 void thread::yield() {
     RaiiLock l;
-    // TODO: MULTIPROCESSOR - acquire guard
-
     yield_helper();
-
-    // TODO: MULTIPROCESSOR - free guard
 }
 
 void thread::join() {
     RaiiLock l;
-    // TODO: MULTIPROCESSOR - acquire guard
 
     // TODO: check currThread TCB is valid (state, joinQueue, stack)
     assert(runningList.find(cpu::self()) != runningList.end());
@@ -59,6 +53,9 @@ void thread::join() {
         // switch to next ready thread if there is one, else suspend
         switch_to_next_or_suspend(&joinQueue->back()->ctx);
 
+        // switch invariant - assert interrupts disabled after returning from switch
+        assert_interrupts_disabled();
+
         // if there are any threads on the finished list, clean them up
         cleanup_finished_list();
     }
@@ -66,6 +63,4 @@ void thread::join() {
     else {
         // do nothing
     }
-
-    // TODO: MULTIPROCESSOR - free guard
 }

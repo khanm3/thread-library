@@ -13,18 +13,10 @@ mutex::~mutex() {
 
 void mutex::lock() {
 	RaiiLock l;
-    // TODO: MULTIPROCESSOR - acquire guard
-
     impl_ptr->lockHelper();
-
-    // TODO: MULTIPROCESSOR - release guard
 }
 
 void mutex::unlock() {
 	RaiiLock l;
-    // TODO: MULTIPROCESSOR - acquire guard
-
     impl_ptr->unlockHelper();
-
-    // TODO: MULTIPROCESSOR - release guard
 }

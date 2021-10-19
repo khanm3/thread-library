@@ -36,31 +36,35 @@ void Tcb::freeStack() {
 
 RaiiLock::RaiiLock() {
     assert_interrupts_enabled();
+
     cpu::interrupt_disable();
+    // TODO: MULTIPROCESSOR: acquire guard
 }
 
 RaiiLock::~RaiiLock() {
     assert_interrupts_disabled();
+
+    // TODO: MULTIPROCESSOR: release guard
     cpu::interrupt_enable();
 }
 
 void os_wrapper(thread_startfunc_t body, void *arg) {
     assert_interrupts_disabled();
-    // do os stuff
 
     // if there are any threads on the finished list, clean them up
     cleanup_finished_list();
 
-    // enable interrupts - switch invariant
+    // switch invariant - release lock on processor before running user code
+    // TODO: MULTIPROCESSOR - release guard
     cpu::interrupt_enable();
 
-    // TODO: MULTIPROCESSOR - switch invariant - acquire guard
-
-    // run thread to finish
+    // run user code
     body(arg);
 
-    // disable interrupts - switch invariant
+    // switch invariant - acquire lock on processor before handling shared
+    //                    data structures + switching
     cpu::interrupt_disable();
+    // TODO: MULTIPROCESSOR - acquire guard
 
     // get tcb of currently running thread
     assert(runningList.find(cpu::self()) != runningList.end());
@@ -72,6 +76,8 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
         readyQueue.push(std::move(currThread->joinQueue->front()));
         currThread->joinQueue->pop();
     }
+
+    // TODO: MULTIPROCESSOR - send IPI
 
     // move tcb of currently running thread to finished list
     *(currThread->state) = FINISHED;
@@ -119,6 +125,8 @@ void cleanup_finished_list() {
 }
 
 void yield_helper() {
+    assert_interrupts_disabled();
+
     // there is a next ready thread
     if (!readyQueue.empty()) {
         // put current thread on ready queue
@@ -130,6 +138,9 @@ void yield_helper() {
         // switch to next ready thread
         switch_to_next_or_suspend(&readyQueue.back()->ctx);
 
+        // switch invariant - assert interrupts disabled after returning from switch
+        assert_interrupts_disabled();
+
         // if there are any threads on the finished list, clean them up
         cleanup_finished_list();
     }
@@ -137,9 +148,5 @@ void yield_helper() {
 
 void handle_timer() {
     RaiiLock l;
-    // TODO: MULTIPROCESSOR - acquire guard
-
     yield_helper();
-
-    // TODO: MULTIPROCESSOR - free guard
 }
