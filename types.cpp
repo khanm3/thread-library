@@ -4,7 +4,6 @@
 std::queue<TcbPtr> readyQueue;
 std::vector<TcbPtr> finishedList;
 std::map<cpu *, TcbPtr> runningList;
-ucontext_t *dummyCtx = new ucontext_t;
 
 Tcb::Tcb()
     : ctx(ucontext_t())
@@ -84,7 +83,7 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
     finishedList.push_back(std::move(currThread));
 
     // switch to next ready thread if there is one, else suspend
-    switch_to_next_or_suspend(dummyCtx);
+    switch_to_next_or_suspend(nullptr);
 }
 
 void switch_to_next_or_suspend(ucontext_t *saveloc) {
@@ -101,8 +100,18 @@ void switch_to_next_or_suspend(ucontext_t *saveloc) {
         readyQueue.pop();
         *(currThread->state) = RUNNING;
 
-        // switch context to new current thread
-        swapcontext(saveloc, &currThread->ctx);
+        // if saveloc is valid, update saveloc with current registers
+        // and swap context to new current thread
+        if (saveloc) {
+            swapcontext(saveloc, &currThread->ctx);
+
+            // switch invariant - assert interrupts disabled after returning from switch
+            assert_interrupts_disabled();
+        }
+        // else, discard current registers and set context to new current thread
+        else {
+            setcontext(&currThread->ctx);
+        }
     }
     // else no other threads, save tcb to saveloc then suspend
     else {
