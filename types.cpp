@@ -206,6 +206,15 @@ void handle_timer() {
 }
 
 void os_suspend() {
+    // invariant: a suspended CPU is always in its suspendCtx
+    // therefore, handle_ipi, if called, is inserted directly after the call
+    // to interrupt_enable_suspend. if there's nothing on the ready queue,
+    // handle_ipi can simply return, and then upon coming back to this stack
+    // frame, the while loop will go to its next iteration and suspend promptly
+    //
+    // this convoluted solution is to help avoid thinking about remaking
+    // and switching to the suspend context while currently running the suspend
+    // context!
     while (true) {
         assert_interrupts_disabled();
 
@@ -241,10 +250,12 @@ void handle_ipi() {
     // else no other threads, return to the os_suspend stack frame, then suspend
     else {
         // update cpu state to suspended
-        cpu::self()->impl_ptr->state = CPU_RUNNING;
+        cpu::self()->impl_ptr->state = CPU_SUSPENDED;
 
         // debug
         std::printf("%p woken up, going back to sleep\n", (void *) cpu::self());
+
+        // return to os_suspend stack frame, which suspends
     }
 }
 
