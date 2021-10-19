@@ -49,6 +49,11 @@ class RaiiLock {
 public:
     RaiiLock();
     ~RaiiLock();
+
+    static void lock();
+    static void unlock();
+    static void acquireGuard();
+    static void releaseGuard();
 };
 
 using TcbPtr = std::unique_ptr<Tcb>;
@@ -68,5 +73,7 @@ void cleanup_finished_list();
 void yield_helper();
 
 void handle_timer();
+
+void os_suspend();
 
 #endif

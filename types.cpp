@@ -1,4 +1,6 @@
 #include <cassert>
+#include <cstdio>
+#include "cpuImpl.h"
 #include "types.h"
 
 std::queue<TcbPtr> readyQueue;
@@ -35,16 +37,32 @@ void Tcb::freeStack() {
 
 RaiiLock::RaiiLock() {
     assert_interrupts_enabled();
-
-    cpu::interrupt_disable();
-    // TODO: MULTIPROCESSOR: acquire guard
+    lock();
 }
 
 RaiiLock::~RaiiLock() {
     assert_interrupts_disabled();
+    unlock();
+}
 
-    // TODO: MULTIPROCESSOR: release guard
+void RaiiLock::lock() {
+    cpu::interrupt_disable();
+    acquireGuard();
+}
+
+void RaiiLock::unlock() {
+    releaseGuard();
     cpu::interrupt_enable();
+}
+
+void RaiiLock::acquireGuard() {
+    while (cpu::guard.exchange(true)) {
+        // spinlock
+    }
+}
+
+void RaiiLock::releaseGuard() {
+    cpu::guard.store(false);
 }
 
 void os_wrapper(thread_startfunc_t body, void *arg) {
@@ -54,16 +72,14 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
     cleanup_finished_list();
 
     // switch invariant - release lock on processor before running user code
-    // TODO: MULTIPROCESSOR - release guard
-    cpu::interrupt_enable();
+    RaiiLock::unlock();
 
     // run user code
     body(arg);
 
     // switch invariant - acquire lock on processor before handling shared
     //                    data structures + switching
-    cpu::interrupt_disable();
-    // TODO: MULTIPROCESSOR - acquire guard
+    RaiiLock::lock();
 
     // get tcb of currently running thread
     assert(runningList.find(cpu::self()) != runningList.end());
@@ -95,6 +111,9 @@ void switch_to_next_or_suspend(ucontext_t *saveloc) {
 
     // if another thread on ready queue, switch to it
     if (!readyQueue.empty()) {
+        // update cpu state to running
+        cpu::self()->impl_ptr->state = CPU_RUNNING;
+
         // move top tcb from ready queue onto running list
         currThread = std::move(readyQueue.front());
         readyQueue.pop();
@@ -115,10 +134,25 @@ void switch_to_next_or_suspend(ucontext_t *saveloc) {
     }
     // else no other threads, save tcb to saveloc then suspend
     else {
-        // TODO: multiprocessor - update tcb
-        // getcontext(saveloc);
-        // increment PC counter to be directly after suspend
-        cpu::interrupt_enable_suspend();
+        // update cpu state to suspended
+        cpu::self()->impl_ptr->state = CPU_SUSPENDED;
+
+        // put empty tcb ptr (unique pointer that doesn't manage a resource)
+        // onto running list
+        currThread = TcbPtr();
+
+        // if saveloc is valid, update saveloc with current registers
+        // and swap context to suspend thread
+        if (saveloc) {
+            swapcontext(saveloc, cpu::self()->impl_ptr->suspendCtx);
+
+            // switch invariant - assert interrupts disabled after returning from switch
+            assert_interrupts_disabled();
+        }
+        // else, discard current registers and set context to suspend thread
+        else {
+            setcontext(cpu::self()->impl_ptr->suspendCtx);
+        }
     }
 
     assert_interrupts_disabled();
@@ -158,4 +192,17 @@ void yield_helper() {
 void handle_timer() {
     RaiiLock l;
     yield_helper();
+}
+
+void os_suspend() {
+    while (true) {
+        assert_interrupts_disabled();
+
+        // debug
+        // std::printf("%p suspend\n", (void *) cpu::self());
+
+        // switch invariant - release lock on processor before suspending
+        RaiiLock::releaseGuard();
+        cpu::interrupt_enable_suspend();
+    }
 }

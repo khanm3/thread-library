@@ -6,4 +6,6 @@ mutexImpl.cpp
 types.h
 types.cpp
 cv.cpp
+cpuImpl.h
+cpuImpl.cpp
 tests/test*.cpp
