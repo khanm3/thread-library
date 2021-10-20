@@ -150,7 +150,6 @@ void switch_to_next_or_suspend(ucontext_t *saveloc) {
 
         // remake suspendCtx
         ucontext_t *suspendCtx = cpu::self()->impl_ptr->suspendCtx;
-        makecontext(suspendCtx, (void (*)()) os_suspend, 0);
 
         // if saveloc is valid, update saveloc with current registers
         // and swap context to suspend thread
@@ -243,8 +242,11 @@ void handle_ipi() {
         readyQueue.pop();
         *(currThread->state) = RUNNING;
 
-        // discard current registers and set context to new current thread
-        setcontext(&currThread->ctx);
+        // update suspendCtx and set context to new current thread
+        swapcontext(cpu::self()->impl_ptr->suspendCtx, &currThread->ctx);
+
+        // switch invariant - assert interrupts disabled after returning from switch
+        assert_interrupts_disabled();
     }
 
     // else no other threads, return to the os_suspend stack frame, then suspend
