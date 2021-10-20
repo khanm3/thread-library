@@ -53,12 +53,15 @@ void cv::signal() {
         impl_ptr->waitQueue.pop();
 
         // send IPI
-        send_ipi();
+        send_ipi(1);
     }
 }
 
 void cv::broadcast() {
 	RaiiLock l;
+
+    // get initial wait queue size
+    std::size_t numUnblocked = impl_ptr->waitQueue.size();
 
     // move all waiting threads to the ready queue if there are any
     while (!impl_ptr->waitQueue.empty()) {
@@ -68,5 +71,5 @@ void cv::broadcast() {
     }
 
     // send IPI
-    send_ipi();
+    send_ipi(numUnblocked);
 }

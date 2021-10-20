@@ -85,6 +85,9 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
     assert(runningList.find(cpu::self()) != runningList.end());
     TcbPtr &currThread = runningList[cpu::self()];
 
+    // get initial join queue size
+    std::size_t numUnblocked = currThread->joinQueue->size();
+
     // move all tcbs on join queue onto ready queue
     while (!currThread->joinQueue->empty()) {
         *(currThread->joinQueue->front()->state) = READY;
@@ -93,7 +96,7 @@ void os_wrapper(thread_startfunc_t body, void *arg) {
     }
 
     // send IPI
-    send_ipi();
+    send_ipi(numUnblocked);
 
     // move tcb of currently running thread to finished list
     *(currThread->state) = FINISHED;
@@ -263,15 +266,18 @@ void handle_ipi() {
     }
 }
 
-void send_ipi() {
+void send_ipi(int num_to_send) {
     assert_interrupts_disabled();
 
-    if (!readyQueue.empty()) {
-        for (auto &[cpuPtr, tcbPtr] : runningList) {
-            if (cpuPtr->impl_ptr->state == CPU_SUSPENDED) {
-                cpuPtr->impl_ptr->state = CPU_RECIEVING_IPI;
-                cpuPtr->interrupt_send();
-            }
+    int sent = 0;
+    for (auto &[cpuPtr, tcbPtr] : runningList) {
+        if (sent >= num_to_send) {
+            return;
+        }
+        if (cpuPtr->impl_ptr->state == CPU_SUSPENDED) {
+            cpuPtr->impl_ptr->state = CPU_RECIEVING_IPI;
+            cpuPtr->interrupt_send();
+            ++sent;
         }
     }
 }

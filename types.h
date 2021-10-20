@@ -78,6 +78,6 @@ void os_suspend();
 
 void handle_ipi();
 
-void send_ipi();
+void send_ipi(int);
 
 #endif

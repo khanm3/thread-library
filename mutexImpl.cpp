@@ -58,6 +58,6 @@ void mutex::impl::unlockHelper() {
         owner = readyQueue.back().get();
 
         // send IPI
-        send_ipi();
+        send_ipi(1);
     }
 }

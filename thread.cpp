@@ -22,7 +22,7 @@ thread::thread(thread_startfunc_t body, void *arg) {
     impl_ptr->joinQueue = readyQueue.back()->joinQueue;
 
     // send IPI
-    send_ipi();
+    send_ipi(1);
 }
 
 thread::~thread() {
