@@ -22,7 +22,7 @@ void cpu::init(thread_startfunc_t body, void *arg) {
         impl_ptr->state = CPU_RUNNING;
 
         // debug
-        printf("%p initialized to running\n", cpu::self());
+        // printf("%p initialized to running\n", cpu::self());
 
         // create tcb object and put it on the running list
         TcbPtr &threadToRun = runningList[cpu::self()];
@@ -46,7 +46,7 @@ void cpu::init(thread_startfunc_t body, void *arg) {
             cpu::self()->impl_ptr->state = CPU_RUNNING;
 
             // debug
-            std::printf("%p initialized to running\n", (void *) cpu::self());
+            // std::printf("%p initialized to running\n", (void *) cpu::self());
 
             // move top tcb from ready queue onto running list
             TcbPtr &threadToRun = runningList[cpu::self()];
@@ -63,7 +63,7 @@ void cpu::init(thread_startfunc_t body, void *arg) {
             impl_ptr->state = CPU_SUSPENDED;
 
             // debug
-            printf("%p initialized to suspended\n", cpu::self());
+            // printf("%p initialized to suspended\n", cpu::self());
 
             // create empty tcbptr (unique pointer that doesn't manage a resource)
             // and put it on the running list

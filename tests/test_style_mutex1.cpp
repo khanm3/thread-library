@@ -29,7 +29,7 @@ void start_func(void *a) {
     }
     catch (const std::runtime_error &re) {
         std::cout << "runtime error: 1 tried to free a lock that 0 holds" << std::endl;
-        assert_interrupts_disabled();
+        assert_interrupts_enabled();
         return;
     }
 }

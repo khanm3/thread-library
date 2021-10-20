@@ -116,7 +116,7 @@ void switch_to_next_or_suspend(ucontext_t *saveloc) {
         cpu::self()->impl_ptr->state = CPU_RUNNING;
 
         // debug
-        std::printf("%p switching to new thread\n", (void *) cpu::self());
+        // std::printf("%p switching to new thread\n", (void *) cpu::self());
 
         // move top tcb from ready queue onto running list
         currThread = std::move(readyQueue.front());
@@ -142,7 +142,7 @@ void switch_to_next_or_suspend(ucontext_t *saveloc) {
         cpu::self()->impl_ptr->state = CPU_SUSPENDED;
 
         // debug
-        std::printf("%p suspending\n", (void *) cpu::self());
+        // std::printf("%p suspending\n", (void *) cpu::self());
 
         // put empty tcb ptr (unique pointer that doesn't manage a resource)
         // onto running list
@@ -235,7 +235,7 @@ void handle_ipi() {
         cpu::self()->impl_ptr->state = CPU_RUNNING;
 
         // debug
-        std::printf("%p set to running\n", (void *) cpu::self());
+        // std::printf("%p set to running\n", (void *) cpu::self());
 
         // move top tcb from ready queue onto running list
         TcbPtr &currThread = runningList[cpu::self()];
@@ -253,7 +253,7 @@ void handle_ipi() {
         cpu::self()->impl_ptr->state = CPU_SUSPENDED;
 
         // debug
-        std::printf("%p woken up, going back to sleep\n", (void *) cpu::self());
+        // std::printf("%p woken up, going back to sleep\n", (void *) cpu::self());
 
         // return to os_suspend stack frame, which suspends
     }
