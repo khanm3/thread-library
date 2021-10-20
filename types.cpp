@@ -200,8 +200,10 @@ void yield_helper() {
 }
 
 void handle_timer() {
-    RaiiLock l;
-    yield_helper();
+    if (cpu::self()->impl_ptr->state == CPU_RUNNING) {
+        RaiiLock l;
+        yield_helper();
+    }
 }
 
 void os_suspend() {
