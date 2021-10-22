@@ -6,7 +6,7 @@
 
 class mutex::impl {
 public:
-    ThreadStatePtr ownerState;
+    Tcb *owner;
     std::queue<TcbPtr> lockQueue;
 
     impl();
