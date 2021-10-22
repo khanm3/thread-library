@@ -14,7 +14,13 @@ void func0(void *a) {
 void func1(void *a) {
     intptr_t i = (intptr_t) a;
     std::cout << i << " attempting to unlock" << std::endl;
-    m.unlock();
+    try {
+        m.unlock();
+    } catch (const std::runtime_error &re) {
+        std::cout << "runtime error: 1 tried to free a lock that 0 holds" << std::endl;
+        assert_interrupts_enabled();
+        return;
+    }
     std::cout << i << " exit after unlock" << std::endl;
 }
 
@@ -24,14 +30,7 @@ void start_func(void *a) {
         thread::yield();
     }
 
-    try {
-        thread t1((thread_startfunc_t) func1, (void *) 1);
-    }
-    catch (const std::runtime_error &re) {
-        std::cout << "runtime error: 1 tried to free a lock that 0 holds" << std::endl;
-        assert_interrupts_enabled();
-        return;
-    }
+    thread t1((thread_startfunc_t) func1, (void *) 1);
 }
 
 int main() {
