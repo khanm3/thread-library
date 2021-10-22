@@ -252,6 +252,9 @@ void handle_ipi() {
 
         // switch invariant - assert interrupts disabled after returning from switch
         assert_interrupts_disabled();
+
+        // if there are any threads on the finished list, clean them up
+        cleanup_finished_list();
     }
 
     // else no other threads, return to the os_suspend stack frame, then suspend
