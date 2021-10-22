@@ -41,6 +41,9 @@ public:
     // MEMBER VARIABLES //
     ucontext_t ctx;
     char *stackPtr;
+    // first TCB created has thread ID=1, second has thread ID=2, etc.
+    // invalid or "empty" TCBs have thread ID=0
+    uintptr_t id;
     std::shared_ptr<ThreadState> state;
     std::shared_ptr<std::queue<std::unique_ptr<Tcb>>> joinQueue;
 };
@@ -63,6 +66,8 @@ using JoinQueuePtr = std::shared_ptr<std::queue<TcbPtr>>;
 extern std::queue<TcbPtr> readyQueue;
 extern std::vector<TcbPtr> finishedList;
 extern std::map<cpu *, TcbPtr> runningList;
+// used to provide unique thread ID
+extern uintptr_t threadCounter;
 
 void os_wrapper(thread_startfunc_t, void *);
 

@@ -1,7 +1,7 @@
 #include "mutexImpl.h"
 
 mutex::impl::impl()
-    : owner(nullptr)
+    : owner(0)
 {
 
 }
@@ -29,22 +29,22 @@ void mutex::impl::lockHelper()  {
     // else lock is free, acquire it
     else {
         // acquire the lock
-        owner = currThread.get();
+        owner = currThread->id;
     }
 }
 
 void mutex::impl::unlockHelper() {
     assert_interrupts_disabled();
 
-    Tcb *currThread = runningList[cpu::self()].get();
+    TcbPtr &currThread = runningList[cpu::self()];
 
     // throw an error if the calling thread does not hold the lock
-    if (currThread != owner) {
+    if (currThread->id != owner) {
         throw std::runtime_error("error: thread tried to unlock mutex not belonging to it");
     }
 
     // otherwise, the current thread owns the lock, we can safely release it
-    owner = nullptr;
+    owner = 0;
 
     // if there's a thread on the lock queue, hand the lock off to it
     if (!lockQueue.empty()) {
@@ -55,7 +55,7 @@ void mutex::impl::unlockHelper() {
 
         // make the lock held again, this time by the thread the lock is being
         // handed off to
-        owner = readyQueue.back().get();
+        owner = readyQueue.back()->id;
 
         // send IPI
         send_ipi(1);

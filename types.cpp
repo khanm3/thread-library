@@ -6,10 +6,12 @@
 std::queue<TcbPtr> readyQueue;
 std::vector<TcbPtr> finishedList;
 std::map<cpu *, TcbPtr> runningList;
+uintptr_t threadCounter = 0;
 
 Tcb::Tcb()
     : ctx(ucontext_t())
     , stackPtr(nullptr)
+    , id(0)
     , state(ThreadStatePtr(new ThreadState(INITIALIZED)))
     , joinQueue(JoinQueuePtr(nullptr))
 {
@@ -19,6 +21,7 @@ Tcb::Tcb()
 Tcb::Tcb(ThreadState state, thread_startfunc_t body, void *arg)
     : ctx(ucontext_t())
     , stackPtr(new char[STACK_SIZE])
+    , id(++threadCounter)
     , state(ThreadStatePtr(new ThreadState(state)))
     , joinQueue(JoinQueuePtr(new std::queue<TcbPtr>()))
 {

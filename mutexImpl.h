@@ -6,7 +6,7 @@
 
 class mutex::impl {
 public:
-    Tcb *owner;
+    uintptr_t owner;
     std::queue<TcbPtr> lockQueue;
 
     impl();
