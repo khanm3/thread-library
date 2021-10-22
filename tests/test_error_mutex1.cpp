@@ -2,38 +2,20 @@
 #include <stdexcept>
 #include "thread.h"
 
-void goodbye(void*);
-void hello(void *);
-
 mutex m;
 
-void goodbye(void* a)
-{
-    m.lock();
-    std::cout << "locked once" << (intptr_t)a << "\n";
-    m.unlock();
-    std::cout << "unlocked once" << (intptr_t)a << "\n";
+void hello(void *a) {
     try {
         m.unlock();
     }
     catch (std::runtime_error &e) {
-        std::cout << e.what() << std::endl;
+        std::cout << "error: thread tried to unlock mutex not belonging to it" << std::endl;
         assert_interrupts_enabled();
         return;
     }
-    std::cout << "unlocked twice" << (intptr_t)a << "\n"; // error should be thrown before this prints
+    std::cout << "unlocked" << std::endl; // error should be thrown before this prints
 }
 
-void hello(void *a)
-{
-    std::cout << "Hello, world!" << std::endl;
-
-    intptr_t one = 1;
-    thread t1((thread_startfunc_t) goodbye, (void *) one);
-}
-
-int main()
-{
-    cpu::boot(1, (thread_startfunc_t) hello, (void *) 100, false, false, 0);
-    std::cout << "finishing boot" << std::endl;
+int main() {
+    cpu::boot(1, (thread_startfunc_t) hello, (void *) 0, false, false, 0);
 }
